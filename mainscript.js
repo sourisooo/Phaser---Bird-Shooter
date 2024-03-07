@@ -2,17 +2,24 @@
 class Example extends Phaser.Scene
 {
 
+    score = 0;
+    shoots = 0;
+    scoreText = '';
+    doitonce = true;
+    enemycount = 0;
+    spawnInterval = 1000;
+    speed = 800; 
+    difficulty = 'moyen';
+
+
     preload ()
     {
         this.load.setBaseURL('./');
 
         this.load.image('bird', './Bird01_00.png');
 
+
     }
-
-
-
-
 
 
     random(num){
@@ -25,6 +32,41 @@ class Example extends Phaser.Scene
     create ()
     {
 
+        gameparams.scoreText = this.add.text(100, 100, `Score:${gameparams.score}`, { font: '32px Arial', fill: '#ffffff' });
+
+        gameparams.shootsText = this.add.text(100, 140, `Shoots:${gameparams.shoots}`, { font: '32px Arial', fill: '#ffffff' });
+
+        gameparams.accuracyText = this.add.text(100, 180, `Accuracy:${gameparams.score/gameparams.shoots}`, { font: '32px Arial', fill: '#ffffff' });
+
+        gameparams.speedText = this.add.text(100, 220, `Press 1, 2 or 3 to alterate difficulty, current: ${gameparams.difficulty}`, { font: '32px Arial', fill: '#ffffff' });
+
+
+         this.input.keyboard.on('keydown-ONE', () => {
+            
+            gameparams.speed = 400;
+
+            gameparams.difficulty = 'facile';
+
+
+            
+          });
+
+          this.input.keyboard.on('keydown-TWO', () => {
+          
+            gameparams.speed = 800 ;
+
+            gameparams.difficulty = 'moyen';
+
+
+          });
+
+          this.input.keyboard.on('keydown-THREE', () => {
+          
+            gameparams.speed = 1200 ;
+
+            gameparams.difficulty = 'difficile';
+
+          });
 
 
           this.input.on('pointerdown', (pointer) => {
@@ -44,107 +86,168 @@ class Example extends Phaser.Scene
 
 
 
-        this.mush = this.physics.add.group({ immovable: true });
+            this.mush = this.physics.add.group({ immovable: true });
 
-        const log = this.mush.create(this.input.mousePointer.x, this.input.mousePointer.y, 'bird');
+            const log = this.mush.create(this.input.mousePointer.x, this.input.mousePointer.y, 'bird');
              log.setScale(0.01);
              log.visible = false;
 
-        this.physics.add.existing(log);
+            this.physics.add.existing(log);
      
          
           });
 
  
          
-         this.input.keyboard.on('keydown-W', () => {
-            console.log('Player pressed W key!');
-            console.log(player.sprite.visible )
-            player.sprite.visible = false;
-            // this.scene.remove(player );
+         this.input.on('pointerdown', () => {
+
+            gameparams.doitonce = true;
+
+            gameparams.shoots = gameparams.shoots+1;
+
+            gameparams.shootsText.setText(`Shoots: ${gameparams.shoots}`);
+
+            gameparams.accuracyText.setText(`Accuracy: ${Math.floor(gameparams.score/gameparams.shoots*100)}%`);
+
 
           });
 
 
-                this.sprites = this.physics.add.group({ immovable: false });
+          this.events.on('scoreUpdated', (data) => {
 
-                let sprite = this.sprites.create(this.random(1700), this.random(900), 'bird');
-                
-                sprite.setVelocity(100, 200).setBounce(1, 1).setCollideWorldBounds(true).setGravityY(200);
+            console.log(data);
 
-                
+            gameparams.score = gameparams.score+1;
+
+            gameparams.scoreText.setText(`Score: ${gameparams.score}`);
+
+            gameparams.accuracyText.setText(`Accuracy: ${Math.floor(gameparams.score/gameparams.shoots*100)}%`);
+
+            gameparams.enemycount = gameparams.enemycount-1;
+
+            let sprite = this.sprites.create(this.random(1700), this.random(900), 'bird');
+            sprite.setVelocity(gameparams.speed, gameparams.speed).setBounce(1, 1).setCollideWorldBounds(true).setGravityY(0);
+            sprite.setSize(100, 60);
+            this.physics.add.existing(sprite);
+    
+            gameparams.enemycount = gameparams.enemycount+1;
+
+           });
+
+            this.sprites = this.physics.add.group({ immovable: false });
+
     // Spawn object every 2 seconds
-    const spawnInterval = 1000; // milliseconds
+   // milliseconds
 
     const spawnTimer = this.time.addEvent({
-      delay: spawnInterval,
+        delay: gameparams.enemycount < 10 ? gameparams.spawnInterval : 10000000,
       callback: () => {
         // Create and position your object here
 
         // this.sprite = this.physics.add.image(this.random(1700), this.random(900), 'lemming');
 
-        for (let i = 0; i < Math.random()*2+1; i++) {
-
         let sprite = this.sprites.create(this.random(1700), this.random(900), 'bird');
-        sprite.setVelocity(500, 200).setBounce(1, 1).setCollideWorldBounds(true).setGravityY(200);
+        sprite.setVelocity(gameparams.speed, gameparams.speed).setBounce(1, 1).setCollideWorldBounds(true).setGravityY(0);
         sprite.setSize(100, 60);
         this.physics.add.existing(sprite);
 
-        console.log(this.sprite);}
+        gameparams.enemycount = gameparams.enemycount+1;
 
-
-        // ... additional object configuration
+ 
+        // ... additional object configuration  
 
         // Optional: Restart the timer for continuous spawning
-        // spawnTimer.reset();
+        console.log(gameparams.enemycount);
+        console.log(spawnTimer.delay);
+
+       if ((gameparams.enemycount > 5)) {
+        spawnTimer.reset();
+        
+        }
+        
+
       },
       loop: true, // Set loop to true for continuous spawning
     });
-  
+
+    console.log(spawnTimer.delay);
+    
+    
 
     }
+
+     getRandomColor() {
+        // Generate random values for red, green, and blue (0-255)
+        const r = Math.floor(Math.random() * 256);
+        const g = Math.floor(Math.random() * 256);
+        const b = Math.floor(Math.random() * 256);
+      
+        // Return the color in hexadecimal format (e.g., "#FF0000")
+        return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+      }
+
 
 
     update ()
     {
-               
+
+        // console.log(gameparams.enemycount);
+
+        gameparams.speedText.setText(`Press 1, 2 or 3 to alterate difficulty, current: ${gameparams.difficulty}`);
+
+        const mouseX = this.input.mousePointer.x;
+        const mouseY = this.input.mousePointer.y;
+
+        let text = this.add.text(mouseX, mouseY, `+`, { font: '32px Arial', fill: this.getRandomColor()});
+                
+        setTimeout(() => {
+            // Code to be executed after the delay
+            text.visible = false;
+
+          }, 150); // Delay in milliseconds
+
+
+        if (gameparams.doitonce == true){
 
         this.physics.overlap(this.sprites, this.mush, (sprite, mushroom) =>
         {
             // sprite.destroy();
             // mushroom.destroy();
-            // sprite.visible = false;
-            // mushroom.visible = false;
 
             sprite.angle = 90;
             mushroom.angle = 90;
-
-            const mouseX = this.input.mousePointer.x;
-            const mouseY = this.input.mousePointer.y;
-
+    
             // Use the mouse coordinates for your game logic
             // For example, display the coordinates on the screen
-            let text = this.add.text(mouseX, mouseY, `+`, { font: '32px Arial', fill: '#ffffff' });
+           
 
+                this.events.emit('scoreUpdated');
 
+                gameparams.doitonce = false;
+            
+           
             setTimeout(() => {
                 // Code to be executed after the delay
-                text.visible = false;
-              }, 200); // Delay in milliseconds
+                sprite.visible = false;
+                mushroom.visible = false;
+              }, 1000); // Delay in milliseconds
 
 
             sprite.setVelocity(0, 1000).setCollideWorldBounds(false).setGravityY(0);
             mushroom.setVelocity(0, 1000).setCollideWorldBounds(false).setGravityY(0);
 
         });
-
+    }
+    }
 
 
 
     }
-}
 
 
+const gameparams = new Example();
+
+console.log(gameparams);
 
 const config = {
     type: Phaser.AUTO,
@@ -154,7 +257,7 @@ const config = {
     physics: {
         default: 'arcade',
         arcade: {
-            gravity: { y: 0 }
+            gravity: { y: -200 }
         }
     }
 };
