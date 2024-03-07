@@ -8,8 +8,9 @@ class Example extends Phaser.Scene
     doitonce = true;
     enemycount = 0;
     spawnInterval = 1000;
-    speed = 800; 
+    speed = 600; 
     difficulty = 'moyen';
+    birdevaded = 0;
 
 
     preload ()
@@ -32,13 +33,15 @@ class Example extends Phaser.Scene
     create ()
     {
 
+      gameparams.speedText = this.add.text(100, 60, `Press 1, 2 or 3 to alterate difficulty, current: ${gameparams.difficulty}`, { font: '32px Arial', fill: '#ffffff' });
+        
         gameparams.scoreText = this.add.text(100, 100, `Score:${gameparams.score}`, { font: '32px Arial', fill: '#ffffff' });
 
         gameparams.shootsText = this.add.text(100, 140, `Shoots:${gameparams.shoots}`, { font: '32px Arial', fill: '#ffffff' });
 
-        gameparams.accuracyText = this.add.text(100, 180, `Accuracy:${gameparams.score/gameparams.shoots}`, { font: '32px Arial', fill: '#ffffff' });
+        gameparams.accuracyText = this.add.text(100, 180, `Accuracy:${gameparams.score/gameparams.shoots}%`, { font: '32px Arial', fill: '#ffffff' });
 
-        gameparams.speedText = this.add.text(100, 220, `Press 1, 2 or 3 to alterate difficulty, current: ${gameparams.difficulty}`, { font: '32px Arial', fill: '#ffffff' });
+        gameparams.birdText = this.add.text(100, 220, `Birds evaded: ${gameparams.birdevaded}, ${gameparams.birdevaded/(gameparams.birdevaded+gameparams.score)}%`, { font: '32px Arial', fill: '#ffffff' });
 
 
          this.input.keyboard.on('keydown-ONE', () => {
@@ -53,7 +56,7 @@ class Example extends Phaser.Scene
 
           this.input.keyboard.on('keydown-TWO', () => {
           
-            gameparams.speed = 800 ;
+            gameparams.speed = 600 ;
 
             gameparams.difficulty = 'moyen';
 
@@ -62,7 +65,7 @@ class Example extends Phaser.Scene
 
           this.input.keyboard.on('keydown-THREE', () => {
           
-            gameparams.speed = 1200 ;
+            gameparams.speed = 800 ;
 
             gameparams.difficulty = 'difficile';
 
@@ -125,12 +128,30 @@ class Example extends Phaser.Scene
 
             gameparams.enemycount = gameparams.enemycount-1;
 
-            let sprite = this.sprites.create(this.random(1700), this.random(900), 'bird');
-            sprite.setVelocity(gameparams.speed, gameparams.speed).setBounce(1, 1).setCollideWorldBounds(true).setGravityY(0);
+            let sprite = this.sprites.create(0, this.random(900), 'bird');
+            sprite.setVelocity(gameparams.speed, 0).setBounce(1, 1).setGravityY(0);
             sprite.setSize(100, 60);
             this.physics.add.existing(sprite);
     
             gameparams.enemycount = gameparams.enemycount+1;
+
+           });
+
+
+           this.events.on('birdEvaded', (spritefromevent) => {
+
+            console.log(spritefromevent);
+
+            console.log(this.sprites);
+
+            this.sprites.remove(spritefromevent); 
+
+            gameparams.birdevaded+=1;
+
+            let sprite = this.sprites.create(0, this.random(900), 'bird');
+            sprite.setVelocity(gameparams.speed, 0).setBounce(1, 1).setGravityY(0);
+            sprite.setSize(100, 60);
+            this.physics.add.existing(sprite);
 
            });
 
@@ -146,21 +167,21 @@ class Example extends Phaser.Scene
 
         // this.sprite = this.physics.add.image(this.random(1700), this.random(900), 'lemming');
 
-        let sprite = this.sprites.create(this.random(1700), this.random(900), 'bird');
-        sprite.setVelocity(gameparams.speed, gameparams.speed).setBounce(1, 1).setCollideWorldBounds(true).setGravityY(0);
+        let sprite = this.sprites.create(0, this.random(900), 'bird');
+        sprite.setVelocity(gameparams.speed, 0).setBounce(1, 1).setGravityY(0);
         sprite.setSize(100, 60);
         this.physics.add.existing(sprite);
 
         gameparams.enemycount = gameparams.enemycount+1;
 
- 
+
         // ... additional object configuration  
 
         // Optional: Restart the timer for continuous spawning
         console.log(gameparams.enemycount);
         console.log(spawnTimer.delay);
 
-       if ((gameparams.enemycount > 5)) {
+       if ((this.sprites.children.entries.length > 5)) {
         spawnTimer.reset();
         
         }
@@ -188,12 +209,23 @@ class Example extends Phaser.Scene
 
 
 
-    update ()
+    update () 
     {
-
+      
         // console.log(gameparams.enemycount);
 
+        this.sprites.children.entries.forEach(sprite => {
+
+            if(sprite.x>2000){ this.events.emit('birdEvaded', sprite); };
+
+
+        });
+
+        console.log(this.sprites.children.entries.length);
+
         gameparams.speedText.setText(`Press 1, 2 or 3 to alterate difficulty, current: ${gameparams.difficulty}`);
+
+        gameparams.birdText.setText(`Birds evaded: ${gameparams.birdevaded}, ${Math.floor(gameparams.birdevaded/(gameparams.birdevaded+gameparams.score)*100)}%`);
 
         const mouseX = this.input.mousePointer.x;
         const mouseY = this.input.mousePointer.y;
@@ -257,7 +289,7 @@ const config = {
     physics: {
         default: 'arcade',
         arcade: {
-            gravity: { y: -200 }
+            gravity: { y: 0 }
         }
     }
 };
